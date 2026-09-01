@@ -7,6 +7,10 @@ arena data ([RoboCupAtHome/Incheon2026](https://github.com/RoboCupAtHome/Incheon
 
 日本語の説明書 → **[README_ja.md](README_ja.md)**
 
+This repository is used as a submodule of the robot repository `hma`, so clone
+it with `--recursive` (or run `git submodule update --init --recursive`
+afterwards); it also works standalone.
+
 ```bash
 ./setup.sh          # install (uv + Python 3.12 venv + upstream sources + arena data)
                     #   --competition=NAME  use another event's data

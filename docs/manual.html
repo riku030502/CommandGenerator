@@ -478,10 +478,20 @@
 
         <h3>A. ゼロから入れる (推奨)</h3>
         <p>
-          <code>setup.sh</code> / <code>run_*.sh</code> / <code>tools/</code> / <code>tests/</code> /
-          <code>requirements.lock.txt</code> を新しい PC にコピーして、
+          このフォルダは <code>gpsr_command_generator</code> という独立したリポジトリで、ロボット側の
+          リポジトリ <code>hma</code> には<strong>サブモジュール</strong>として入っています。親ごと取得するときは
+          <code>--recursive</code> を付けます。
         </p>
-<pre><code>cd &lt;コピー先のフォルダ&gt;
+<pre><code>git clone --recursive &lt;hma のリポジトリ URL&gt;
+cd hma/command_generator
+./setup.sh</code></pre>
+        <p>
+          付け忘れるとサブモジュールの中身が空になります。そのときは
+          <code>git submodule update --init --recursive</code> を実行してください。
+          ジェネレータだけ欲しい場合は単体で clone しても動きます。
+        </p>
+<pre><code>git clone https://github.com/riku030502/gpsr_command_generator.git
+cd gpsr_command_generator
 ./setup.sh</code></pre>
         <p>これだけで次がすべて自動実行されます。</p>
         <ol>
@@ -865,9 +875,21 @@ LLM_ARGS="--host localhost --port 11434 -a local -m qwen3:8b"</code></pre>
 │&nbsp;&nbsp; └── fix_data_format.py  <span class="dim">location_names.md の行末 | を補う</span><br>
 ├── tests/                  <span class="dim">GUI の自動テスト</span><br>
 ├── <span class="hi">data/</span>                   <span class="dim">★ 実際に使うアリーナデータ (Incheon2026 の修正済みコピー)</span><br>
-├── CommandGenerator/       <span class="dim">上流リポジトリ (触らない)</span><br>
-├── Incheon2026/            <span class="dim">2026 世界大会の公式データ (触らない・data/ の元)</span><br>
-└── .venv/                  <span class="dim">Python 3.12 仮想環境 (別 PC には持っていかない)</span></div>
+├── CommandGenerator/       <span class="dim">上流リポジトリ (setup.sh が clone・git 管理外)</span><br>
+├── Incheon2026/            <span class="dim">2026 世界大会の公式データ (setup.sh が clone・git 管理外)</span><br>
+└── .venv/                  <span class="dim">Python 3.12 仮想環境 (git 管理外・持ち運ばない)</span></div>
+
+        <div class="note">
+          <span class="note-label">git に入るもの・入らないもの</span>
+          <p>
+            <code>CommandGenerator/</code> <code>Incheon2026/</code> <code>.venv/</code> <code>llm.conf</code>
+            はリポジトリに含めません。前 2 つはそれ自体が git リポジトリなので、
+            コミットに巻き込むと壊れます (<code>--competition=</code> で別大会を取った場合も、
+            <code>setup.sh</code> がそのフォルダ名を <code>.git/info/exclude</code> に自動追記します)。
+            一方 <code>data/</code> は<strong>含めています</strong>。実際に生成へ使うのはここなので、
+            コミットを固定すればアリーナ定義もそのまま再現できます。
+          </p>
+        </div>
 
         <div class="note">
           <span class="note-label">上流には手を入れていません</span>
@@ -881,6 +903,21 @@ LLM_ARGS="--host localhost --port 11434 -a local -m qwen3:8b"</code></pre>
         <h3>更新する</h3>
 <pre><code>./setup.sh --latest
 ./run_tests.sh</code></pre>
+        <p>
+          サブモジュールは「親がどのコミットを指すか」を記録しているだけなので、ここで commit / push
+          しても親には反映されません。親側でもう 1 回コミットが必要です。
+        </p>
+<pre><code><span class="c"># ジェネレータ側</span>
+git add -A &amp;&amp; git commit -m "..." &amp;&amp; git push
+
+<span class="c"># 親リポジトリ側 (指し先を進める)</span>
+cd .. &amp;&amp; git add command_generator
+git commit -m "Update command_generator" &amp;&amp; git push</code></pre>
+        <p>
+          受け取る側は <code>git pull</code> のあと <code>git submodule update --init --recursive</code>。
+          これは<strong>親が記録したコミットに戻す</strong>操作なので、ジェネレータ側でコミットせずに
+          編集していると消えます。<code>data/</code> を触ったら先にコミットしてください。
+        </p>
         <p>
           上流の変更で GUI が壊れた場合は、<code>setup.sh</code> の <code>GEN_COMMIT</code> に書かれている
           動作確認済みコミットに戻せます (引数なしの <code>./setup.sh</code> がそれです)。

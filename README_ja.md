@@ -28,11 +28,26 @@ RoboCup@Home 公式の GPSR コマンドジェネレータ
 
 ### 2-1. ゼロからインストールする (推奨)
 
-`setup.sh` / `run_*.sh` / `tools/` / `tests/` / `requirements.lock.txt` / `llm.conf.example`
-を新しい PC にコピーし、
+このフォルダは `gpsr_command_generator` という独立したリポジトリで、ロボット側のリポジトリ
+`hma` には**サブモジュール**として入っています。親ごと取得する場合:
 
 ```bash
-cd <コピー先のフォルダ>
+git clone --recursive <hma のリポジトリ URL>
+cd hma/command_generator
+./setup.sh
+```
+
+サブモジュールは通常の `git clone` では中身が空になります。`--recursive` を忘れたときは
+
+```bash
+git submodule update --init --recursive
+```
+
+を実行してください。ジェネレータだけが必要なら単体でも clone できます:
+
+```bash
+git clone https://github.com/riku030502/gpsr_command_generator.git
+cd gpsr_command_generator
 ./setup.sh
 ```
 
@@ -480,10 +495,18 @@ LLM が Markdown の箇条書き以外を返すと上流のパーサが例外を
 │   └── fix_data_format.py  location_names.md の行末 `|` を補う
 ├── tests/                  GUI の自動テスト
 ├── data/                   ★ 自分たちのアリーナデータ (ここを編集する)
-├── CommandGenerator/       上流リポジトリ (触らない)
-├── Incheon2026/            2026 世界大会の公式データ (触らない・data/ の元)
-└── .venv/                  Python 3.12 仮想環境 (別 PC には持っていかない)
+├── CommandGenerator/       上流リポジトリ (setup.sh が clone・git 管理外)
+├── Incheon2026/            2026 世界大会の公式データ (setup.sh が clone・git 管理外)
+└── .venv/                  Python 3.12 仮想環境 (git 管理外・別 PC には持っていかない)
 ```
+
+上の 3 つと `llm.conf` は `.gitignore` に入れてあり、このリポジトリには含まれません。
+`CommandGenerator/` と `Incheon2026/` はそれ自体が git リポジトリなので、コミットに
+巻き込まれると壊れます。`--competition=` で別の大会を取ってきたときも、`setup.sh` が
+そのフォルダ名を `.git/info/exclude` に自動で追記します。
+
+逆に `data/` は**リポジトリに含めています**。実際にコマンド生成に使うのはここなので、
+コミットを固定すればアリーナ定義もそのまま再現できます。
 
 `tools/gpsr_ui.py` は上流のコードを一切書き換えずに、起動時の設定だけを差し替えるラッパです
 (上流は `ui.run(show=False)` 決め打ちでポートが 8080 固定・自動リロード有効のため)。
@@ -505,3 +528,30 @@ LLM が Markdown の箇条書き以外を返すと上流のパーサが例外を
 
 で動作を確認してください。上流の変更で GUI が壊れた場合は、`setup.sh` の
 `GEN_COMMIT` に書かれている動作確認済みコミットに戻せます (引数なしの `./setup.sh` がそれです)。
+
+### このリポジトリ自体を更新したとき
+
+サブモジュールは「親がどのコミットを指すか」を記録しているだけなので、
+中で commit / push しただけでは親に反映されません。親側でも 1 回コミットが必要です。
+
+```bash
+# ジェネレータ側
+cd hma/command_generator
+git add -A && git commit -m "..." && git push
+
+# 親リポジトリ側 (指し先を新しいコミットに進める)
+cd ..
+git add command_generator
+git commit -m "Update command_generator"
+git push
+```
+
+他の PC で受け取る側は:
+
+```bash
+git pull
+git submodule update --init --recursive   # 記録されたコミットに合わせる
+```
+
+`git submodule update` は**親が記録したコミットに戻す**動作なので、ジェネレータ側で
+コミットせずに編集していると消えます。`data/` を編集したら先にコミットしてください。
