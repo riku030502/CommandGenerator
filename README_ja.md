@@ -28,7 +28,7 @@ RoboCup@Home 公式の GPSR コマンドジェネレータ
 
 ### 2-1. ゼロからインストールする (推奨)
 
-このフォルダは `gpsr_command_generator` という独立したリポジトリで、ロボット側のリポジトリ
+このフォルダは `CommandGenerator` という独立したリポジトリで、ロボット側のリポジトリ
 `hma` には**サブモジュール**として入っています。親ごと取得する場合:
 
 ```bash
@@ -46,10 +46,14 @@ git submodule update --init --recursive
 を実行してください。ジェネレータだけが必要なら単体でも clone できます:
 
 ```bash
-git clone https://github.com/riku030502/gpsr_command_generator.git
-cd gpsr_command_generator
+git clone https://github.com/riku030502/CommandGenerator.git
+cd CommandGenerator
 ./setup.sh
 ```
+
+> **紛らわしい点**: このリポジトリ (`riku030502/CommandGenerator`) と、上流の公式ジェネレータ
+> (`RoboCupAtHome/CommandGenerator`) は名前が同じですが別物です。上流は `setup.sh` が
+> `CommandGenerator/` サブフォルダに clone します。
 
 これだけで以下がすべて自動で行われます。
 

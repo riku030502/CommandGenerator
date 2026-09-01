@@ -478,7 +478,7 @@
 
         <h3>A. ゼロから入れる (推奨)</h3>
         <p>
-          このフォルダは <code>gpsr_command_generator</code> という独立したリポジトリで、ロボット側の
+          このフォルダは <code>CommandGenerator</code> という独立したリポジトリで、ロボット側の
           リポジトリ <code>hma</code> には<strong>サブモジュール</strong>として入っています。親ごと取得するときは
           <code>--recursive</code> を付けます。
         </p>
@@ -490,9 +490,17 @@ cd hma/command_generator
           <code>git submodule update --init --recursive</code> を実行してください。
           ジェネレータだけ欲しい場合は単体で clone しても動きます。
         </p>
-<pre><code>git clone https://github.com/riku030502/gpsr_command_generator.git
-cd gpsr_command_generator
+<pre><code>git clone https://github.com/riku030502/CommandGenerator.git
+cd CommandGenerator
 ./setup.sh</code></pre>
+        <div class="note">
+          <span class="note-label">名前が同じで紛らわしい点</span>
+          <p>
+            このリポジトリ <code>riku030502/CommandGenerator</code> と、上流の公式ジェネレータ
+            <code>RoboCupAtHome/CommandGenerator</code> は別物です。上流の方は
+            <code>setup.sh</code> が <code>CommandGenerator/</code> サブフォルダに clone します。
+          </p>
+        </div>
         <p>これだけで次がすべて自動実行されます。</p>
         <ol>
           <li><code>uv</code> が無ければ <code>~/.local/bin</code> に導入</li>
