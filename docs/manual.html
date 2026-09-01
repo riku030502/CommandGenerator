@@ -1,0 +1,897 @@
+<title>GPSR コマンドジェネレータ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@700;900&display=swap">
+
+<style>
+  :root {
+    --paper:   #EFF2F1;
+    --surface: #FFFFFF;
+    --sunken:  #E3E8E7;
+    --ink:     #12181A;
+    --muted:   #566266;
+    --faint:   #7C888B;
+    --rule:    #D3DAD9;
+    --accent:  #0B6E5F;
+    --accent-soft: #DCEBE7;
+    --warn:    #A3510B;
+    --warn-soft: #F6E7D6;
+    --code-bg: #141B1D;
+    --code-ink:#DCE6E4;
+    --code-dim:#7E9490;
+
+    --w-text: 68ch;
+    --step-0: 1rem;
+    --step-1: 1.125rem;
+    --step-2: 1.375rem;
+    --step-3: 1.75rem;
+    --step-4: 2.5rem;
+    --step-5: clamp(2.6rem, 6vw, 4rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:   #0D1214;
+      --surface: #151C1E;
+      --sunken:  #1B2426;
+      --ink:     #E4EBE9;
+      --muted:   #97A5A6;
+      --faint:   #77878A;
+      --rule:    #263134;
+      --accent:  #43C0A6;
+      --accent-soft: #10312C;
+      --warn:    #E0904A;
+      --warn-soft: #2E2015;
+      --code-bg: #090E10;
+      --code-ink:#D5E1DF;
+      --code-dim:#6D8480;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:   #0D1214;
+    --surface: #151C1E;
+    --sunken:  #1B2426;
+    --ink:     #E4EBE9;
+    --muted:   #97A5A6;
+    --faint:   #77878A;
+    --rule:    #263134;
+    --accent:  #43C0A6;
+    --accent-soft: #10312C;
+    --warn:    #E0904A;
+    --warn-soft: #2E2015;
+    --code-bg: #090E10;
+    --code-ink:#D5E1DF;
+    --code-dim:#6D8480;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans JP", system-ui, -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.85;
+    font-feature-settings: "palt" 1;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 3rem) 6rem;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    padding: clamp(3rem, 8vw, 5.5rem) 0 2.5rem;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h1 {
+    font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+    font-weight: 900;
+    font-size: var(--step-5);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .standfirst {
+    max-width: var(--w-text);
+    color: var(--muted);
+    font-size: var(--step-1);
+    margin: 0;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  .chip {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    color: var(--muted);
+    background: var(--surface);
+    white-space: nowrap;
+  }
+  .chip b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- quick start ---------- */
+
+  .quickstart {
+    margin-top: 2.5rem;
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .qs-item {
+    background: var(--surface);
+    padding: 1.4rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .qs-item code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--accent);
+    word-break: break-all;
+  }
+  .qs-item span { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+
+  /* ---------- layout ---------- */
+
+  .columns { display: block; }
+
+  @media (min-width: 1040px) {
+    .columns {
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: clamp(2rem, 5vw, 4.5rem);
+      align-items: start;
+    }
+    .toc { position: sticky; top: 2rem; }
+  }
+
+  .toc {
+    padding-top: 3.5rem;
+    font-size: 0.85rem;
+  }
+  .toc-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--rule);
+    display: block;
+  }
+  .toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .toc a {
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+    color: var(--muted);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .toc a:hover, .toc a:focus-visible { color: var(--accent); }
+  .toc a em {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-style: normal;
+    color: var(--faint);
+    font-size: 0.78rem;
+    padding-top: 0.1rem;
+  }
+
+  /* ---------- sections ---------- */
+
+  section {
+    padding-top: 3.5rem;
+    scroll-margin-top: 1.5rem;
+  }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.75rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sec-num {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-weight: 700;
+    font-size: var(--step-2);
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+    font-weight: 900;
+    font-size: var(--step-3);
+    line-height: 1.3;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+    font-weight: 700;
+    font-size: var(--step-1);
+    line-height: 1.5;
+    margin: 2.5rem 0 0.75rem;
+    text-wrap: balance;
+  }
+
+  p, ul, ol { max-width: var(--w-text); }
+  p { margin: 0 0 1.1rem; }
+  ul, ol { margin: 0 0 1.2rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.4rem; }
+  li::marker { color: var(--faint); }
+
+  a { color: var(--accent); text-underline-offset: 0.2em; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  strong { font-weight: 700; }
+
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.9em;
+  }
+
+  p code, li code, td code, th code {
+    background: var(--sunken);
+    border-radius: 2px;
+    padding: 0.1em 0.35em;
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 1.1rem 1.25rem;
+    border-radius: 3px;
+    overflow-x: auto;
+    margin: 0 0 1.4rem;
+    line-height: 1.7;
+    font-size: 0.875rem;
+    border-left: 3px solid var(--accent);
+  }
+  pre code { font-size: inherit; }
+  pre .c { color: var(--code-dim); }
+
+  /* ---------- callouts ---------- */
+
+  .note, .warn {
+    border: 1px solid var(--rule);
+    border-left-width: 4px;
+    background: var(--surface);
+    padding: 1.15rem 1.35rem;
+    margin: 0 0 1.4rem;
+    max-width: var(--w-text);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .note { border-left-color: var(--accent); }
+  .warn { border-left-color: var(--warn); background: var(--warn-soft); }
+
+  .note-label, .warn-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .note-label { color: var(--accent); }
+  .warn-label { color: var(--warn); }
+  .note p:last-child, .warn p:last-child { margin-bottom: 0; }
+  .note pre, .warn pre { margin-bottom: 0; }
+
+  /* ---------- tables ---------- */
+
+  .scroll { overflow-x: auto; margin: 0 0 1.5rem; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 460px;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    background: var(--surface);
+  }
+  caption {
+    text-align: left;
+    font-size: 0.8rem;
+    color: var(--faint);
+    padding-bottom: 0.6rem;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  thead th {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    font-weight: 500;
+    border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.k {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    white-space: nowrap;
+    color: var(--ink);
+  }
+
+  /* ---------- file tree ---------- */
+
+  .tree {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 1.25rem 1.4rem;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.83rem;
+    line-height: 1.85;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+  .tree .dim { color: var(--faint); }
+  .tree .hi { color: var(--accent); font-weight: 700; }
+
+  footer {
+    margin-top: 5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.8rem;
+    color: var(--faint);
+    max-width: var(--w-text);
+  }
+  footer a { color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="eyebrow">RoboCup@Home 2026 / Task Generator</span>
+    <h1>GPSR コマンドジェネレータ</h1>
+    <p class="standfirst">
+      公式ジェネレータ (RoboCupAtHome/CommandGenerator) を、ブラウザ GUI と
+      2026 世界大会 (Incheon) の公式アリーナデータごと、すぐ動く形にまとめたセットです。
+      導入・データの作り方・本番運用・つまずきどころをこの 1 枚にまとめています。
+    </p>
+    <div class="chips">
+      <span class="chip">Python <b>3.12</b> (uv が自動導入)</span>
+      <span class="chip">UI <b>NiceGUI 3.16</b></span>
+      <span class="chip">アリーナデータ <b>Incheon 2026</b></span>
+      <span class="chip">動作確認 <b>Ubuntu 22.04</b></span>
+      <span class="chip">インストール後は <b>オフライン可</b></span>
+    </div>
+  </header>
+
+  <div class="quickstart">
+    <div class="qs-item">
+      <code>./setup.sh</code>
+      <span>別の PC ではまずこれ。uv・仮想環境・上流ソース・アリーナデータまで全部そろえます。</span>
+    </div>
+    <div class="qs-item">
+      <code>./run_gpsr_ui.sh</code>
+      <span>GUI 起動。ブラウザで <code>http://localhost:8080</code> を開きます。</span>
+    </div>
+    <div class="qs-item">
+      <code>./run_cli.sh</code>
+      <span>テキスト版。QR コード生成と EGPSR セットアップはこちら。</span>
+    </div>
+    <div class="qs-item">
+      <code>./run_tests.sh</code>
+      <span>動作確認。データ検証と GUI の自動操作テストが走ります。</span>
+    </div>
+    <div class="qs-item">
+      <code>tools/check_llm.py</code>
+      <span>その PC で使える LLM を探して疎通テスト。Rephrase を使うなら最初にこれ。</span>
+    </div>
+  </div>
+
+  <div class="columns">
+
+    <nav class="toc" aria-label="目次">
+      <span class="toc-label">Contents</span>
+      <ol>
+        <li><a href="#env"><em>01</em>動作環境</a></li>
+        <li><a href="#install"><em>02</em>別 PC への導入</a></li>
+        <li><a href="#launch"><em>03</em>起動する</a></li>
+        <li><a href="#gui"><em>04</em>GUI の使い方</a></li>
+        <li><a href="#data"><em>05</em>アリーナデータ</a></li>
+        <li><a href="#llm"><em>06</em>LLM 言い換え</a></li>
+        <li><a href="#trouble"><em>07</em>困ったとき</a></li>
+        <li><a href="#files"><em>08</em>ファイル構成</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <!-- 01 -->
+      <section id="env">
+        <div class="sec-head"><span class="sec-num">01</span><h2>動作環境</h2></div>
+
+        <div class="scroll">
+          <table>
+            <thead><tr><th>項目</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td class="k">OS</td><td>Linux (Ubuntu 22.04 で確認)。macOS / WSL も同手順で動きます</td></tr>
+              <tr><td class="k">Python</td><td><strong>3.12 以上が必須</strong>。<code>setup.sh</code> が uv 経由で用意するので、PC 側に無くても構いません</td></tr>
+              <tr><td class="k">その他</td><td><code>git</code> / <code>curl</code> / ブラウザ</td></tr>
+              <tr><td class="k">ネット</td><td>導入時のみ必要。導入後はオフラインで動きます (LLM 言い換えを使う場合を除く)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <span class="note-label">なぜ 3.12 なのか</span>
+          <p>上流の <code>llm.py</code> が Python 3.12 で追加された f-string 記法を使っており、3.11 以下では <code>SyntaxError</code> で落ちます。Ubuntu 22.04 の標準は 3.10 なので、必ず <code>.venv</code> 経由で起動してください。</p>
+        </div>
+      </section>
+
+      <!-- 02 -->
+      <section id="install">
+        <div class="sec-head"><span class="sec-num">02</span><h2>別の PC への導入</h2></div>
+
+        <h3>A. ゼロから入れる (推奨)</h3>
+        <p>
+          <code>setup.sh</code> / <code>run_*.sh</code> / <code>tools/</code> / <code>tests/</code> /
+          <code>requirements.lock.txt</code> を新しい PC にコピーして、
+        </p>
+<pre><code>cd &lt;コピー先のフォルダ&gt;
+./setup.sh</code></pre>
+        <p>これだけで次がすべて自動実行されます。</p>
+        <ol>
+          <li><code>uv</code> が無ければ <code>~/.local/bin</code> に導入</li>
+          <li>上流の <code>CommandGenerator</code> と <code>Incheon2026</code> (2026 世界大会の公式データ) を clone (動作確認済みコミットに固定)</li>
+          <li><code>.venv/</code> に Python 3.12 環境を作り、固定バージョンで依存を導入</li>
+          <li><code>Incheon2026</code> から <code>data/</code> を作成し、後述のフォーマット不備を自動修正</li>
+          <li>データを検証してサンプルコマンドを 3 個表示</li>
+        </ol>
+        <p>最後に <code>PROBLEMS: none</code> と <code>== done</code> が出れば成功です。</p>
+        <p>
+          上流の最新版を使うなら <code>./setup.sh --latest</code>、テストも入れるなら
+          <code>./setup.sh --with-tests</code>。何度実行しても安全で、既存の <code>data/</code> は上書きしません。
+        </p>
+        <p>
+          <strong>別の大会のデータを使う場合</strong>は <code>--competition=</code> で指定します。
+          RoboCup@Home は大会ごとに <code>github.com/RoboCupAtHome/&lt;大会名&gt;</code> を公開しています。
+        </p>
+<pre><code>./setup.sh --competition=GermanOpen2026
+./setup.sh --competition=Salvador2025          <span class="c"># 2025 世界大会 (練習用)</span>
+./setup.sh --competition=CompetitionTemplate   <span class="c"># 中身が汎用の空テンプレート</span></code></pre>
+        <p><code>data/</code> を作り直すときは <code>rm -rf data</code> してから <code>./setup.sh</code> です。</p>
+
+        <h3>B. フォルダごと持っていく</h3>
+        <p>
+          USB などでコピーする場合、<code>.venv/</code> には<strong>絶対パスが埋め込まれている</strong>ため
+          そのままでは動きません。コピー先で次を実行してください。
+        </p>
+<pre><code>./setup.sh --recreate    <span class="c"># .venv を作り直す。data/ と llm.conf はそのまま</span></code></pre>
+        <p>
+          <code>CommandGenerator/</code> と <code>Incheon2026/</code> が既にあれば clone は走らず、
+          依存パッケージのダウンロードだけがネットを使います。会場で完全オフラインにしたいなら、
+          本番で使う PC 上で事前に一度 <code>./setup.sh</code> を通しておいてください。
+        </p>
+
+        <h3>C. uv を使わず手動で</h3>
+<pre><code>git clone https://github.com/RoboCupAtHome/CommandGenerator.git
+git clone https://github.com/RoboCupAtHome/Incheon2026.git
+python3.12 -m venv .venv
+./.venv/bin/pip install -r requirements.lock.txt
+./.venv/bin/pip install -e ./CommandGenerator --no-deps
+cp -r Incheon2026 data &amp;&amp; rm -rf data/.git data/.gitmodules
+python3 tools/fix_data_format.py data</code></pre>
+      </section>
+
+      <!-- 03 -->
+      <section id="launch">
+        <div class="sec-head"><span class="sec-num">03</span><h2>起動する</h2></div>
+
+        <h3>GUI</h3>
+<pre><code>./run_gpsr_ui.sh</code></pre>
+        <p>起動すると待ち受け URL が表示されます。</p>
+<pre><code>NiceGUI ready to go on http://localhost:8080, http://192.168.0.104:8080, ...</code></pre>
+        <p>
+          ブラウザで <code>http://localhost:8080</code> を開きます。表示された LAN の URL を使えば
+          <strong>同じネットワークのタブレットやサブ PC からも開けます</strong>。審判用の大画面に出すときに便利です。
+        </p>
+<pre><code>./run_gpsr_ui.sh --ui-port 9000          <span class="c"># 8080 が埋まっているとき</span>
+./run_gpsr_ui.sh -d /path/to/other/data  <span class="c"># 別のアリーナデータ</span>
+./run_gpsr_ui.sh --ui-show               <span class="c"># 起動時にブラウザを開く</span></code></pre>
+        <p>停止は <code>Ctrl+C</code> です。</p>
+
+        <h3>CLI (テキスト版)</h3>
+<pre><code>./run_cli.sh</code></pre>
+        <p>数字を入力して Enter で生成します。</p>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>入力</th><th>内容</th></tr></thead>
+            <tbody>
+              <tr><td class="k">1</td><td>任意のコマンド</td></tr>
+              <tr><td class="k">2</td><td>物体操作を含まないコマンド (人に関するタスク)</td></tr>
+              <tr><td class="k">3</td><td>物体操作を含むコマンド</td></tr>
+              <tr><td class="k">4</td><td>3 個まとめて生成</td></tr>
+              <tr><td class="k">5</td><td>EGPSR セットアップ生成。個数を聞かれ、番号入力で個別に振り直し、<code>r</code> で全部振り直し</td></tr>
+              <tr><td class="k">0</td><td>直前のコマンドを QR コード画像で表示</td></tr>
+              <tr><td class="k">q</td><td>終了</td></tr>
+            </tbody>
+          </table>
+        </div>
+<pre><code>./run_cli.sh -p              <span class="c"># 読み込まれたデータを一覧表示</span>
+./run_cli.sh -g &gt; out.txt    <span class="c"># 5000 個生成してデータの不備を洗い出す</span></code></pre>
+        <div class="note">
+          <span class="note-label">QR コードについて</span>
+          <p><code>0</code> は PIL が画像ビューアを起動します。デスクトップ環境の無い PC (SSH 越しなど) では表示できません。</p>
+        </div>
+      </section>
+
+      <!-- 04 -->
+      <section id="gui">
+        <div class="sec-head"><span class="sec-num">04</span><h2>GUI の使い方</h2></div>
+
+        <h3>生成画面</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>部品</th><th>役割</th></tr></thead>
+            <tbody>
+              <tr><td class="k">#</td><td>生成する個数 (1〜5)。既定は 3</td></tr>
+              <tr><td class="k">Generate GPSR Commands</td><td>指定個数を生成。1 個目は「人」系、2 個目は「物体」系、3 個目以降は任意カテゴリで、最後にシャッフルされます</td></tr>
+              <tr><td class="k">Rephrase ALL</td><td>全コマンドを LLM で言い換え (LLM 設定が必要)</td></tr>
+              <tr><td class="k">New Command</td><td>そのカードだけ、同じカテゴリで作り直す</td></tr>
+              <tr><td class="k">Rephrase</td><td>そのコマンドだけ言い換える</td></tr>
+              <tr><td class="k">Lock &amp; Show</td><td>内容を確定し、提示用画面へ切り替える</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>生成中・言い換え中はボタンが自動的に無効化されます。</p>
+
+        <h3>提示画面</h3>
+        <ul>
+          <li>上部のコマンドボタンを押すと、そのコマンドが下に大きく表示されます。</li>
+          <li><strong>Text size</strong> スライダー (32〜254 px) で文字サイズを調整。会場の距離に合わせてください。</li>
+          <li><strong>Phrasing 0 / 1 / 2</strong> タブで言い換え候補を切り替えられます。</li>
+          <li><strong>Lock &amp; Show</strong> をもう一度押すと生成画面に戻ります。</li>
+        </ul>
+
+        <div class="note">
+          <span class="note-label">競技記録が残ります</span>
+          <p><strong>Lock &amp; Show</strong> を押した瞬間に、その回のコマンドと言い換えがすべて <code>~/gpsr-ui.log</code> に追記されます。競技後の確認や抗議対応に使えるので、大会中はこのファイルを消さないでください。</p>
+        </div>
+      </section>
+
+      <!-- 05 -->
+      <section id="data">
+        <div class="sec-head"><span class="sec-num">05</span><h2>アリーナデータの入れ方</h2></div>
+
+        <p><code>data/</code> には <strong>2026 世界大会 (Incheon) の公式データ</strong>が入っています。練習用に自分たちのアリーナへ書き換えることもできます。ジェネレータが読むのは次の 4 ファイルだけです。</p>
+
+        <div class="tree">data/<br>
+├── <span class="hi">names/names.md</span>          <span class="dim">人の名前</span><br>
+├── <span class="hi">maps/room_names.md</span>      <span class="dim">部屋</span><br>
+├── <span class="hi">maps/location_names.md</span>  <span class="dim">家具・設置場所とカテゴリ</span><br>
+└── <span class="hi">objects/objects.md</span>      <span class="dim">物体とそのクラス</span></div>
+
+        <p>
+          <code>objects/known_objects/</code> の画像や <code>maps/arena.png</code> はジェネレータでは使いませんが、
+          チーム内資料としてテンプレートの形式のまま置いておくと便利です。
+        </p>
+
+        <h3>names/names.md</h3>
+<pre><code>## Names
+| Names |
+| ------------ |
+| Adel |
+| Angel |</code></pre>
+        <p>
+          <strong>英字 1 単語のみ</strong>です。スペース・ハイフン・数字を含む名前
+          (<code>Mary Jane</code>, <code>Anne-Marie</code>, <code>Taro3</code>) は
+          エラーにならず<strong>黙って無視されます</strong>。
+        </p>
+
+        <h3>maps/room_names.md</h3>
+<pre><code>## Rooms
+| Name |
+| ------------ |
+| kitchen |
+| living room |</code></pre>
+        <p><strong>英字 1〜2 単語まで</strong>。3 単語以上 (<code>big living room</code>) やハイフン入りは無視されます。</p>
+
+        <h3>maps/location_names.md</h3>
+<pre><code>## Locations
+| Number | Name  | Object Category |
+| ------------ | ----------- | ----------- |
+| 1 | laundry table (p) | fabrics |
+| 2 | washing machine (p) | |
+| 10 | refrigerator | |</code></pre>
+        <ul>
+          <li><code>(p)</code> を付けると「物を置ける場所 (placement location)」になります。</li>
+          <li><code>Object Category</code> はその家具が既定の置き場所になっている物体クラス。<code>objects.md</code> のクラス名 (複数形) と綴りを合わせます。空欄で構いません。</li>
+          <li>名前に使えるのは<strong>英字とスペースだけ</strong>。数字やハイフン (<code>table 2</code>, <code>side-table</code>) を入れると、その行だけでなく<strong>前後の行まで巻き込んで読み飛ばされます</strong>。</li>
+        </ul>
+
+        <div class="warn">
+          <span class="warn-label">最重要 — 行末のパイプ</span>
+          <p>
+            上流のパーサは 3 列目の後ろにも <code>|</code> があることを前提にしています。
+            <code>| 1 | bed (p) |</code> のように行末の <code>|</code> が 1 本足りない行が混ざると、
+            <strong>その行だけでなく前後の行まで巻き込んで読み飛ばされ、警告も一切出ません</strong>。
+            必ずすべての行を <code>| 番号 | 名前 | カテゴリ |</code> の形にしてください。
+          </p>
+<pre><code>python3 tools/fix_data_format.py data</code></pre>
+        </div>
+
+        <h3>公式 2026 データにあった不備 (data/ では修正済み)</h3>
+        <p>
+          <code>Incheon2026</code> をそのまま読ませると問題が出たので、<code>data/</code> を作る際に自動で直しています。
+          <code>Incheon2026/</code> の方は公式のまま残してあるので、差分を見たいときはそちらと比べてください。
+        </p>
+        <ol>
+          <li><strong>全 20 行で行末の <code>|</code> が無い</strong> — <code>fix_data_format.py</code> が補完します。</li>
+          <li>
+            <strong>13 行目で名前とカテゴリの間の <code>|</code> が抜けている</strong> — 公式ファイルはこうなっています。
+<pre><code>| 13 | cooking table (p) cleaning supplies |</code></pre>
+            このままだと家具名が <code>cooking table cleaning supplies</code> という 1 個の場所として読まれます。
+            <code>(p)</code> は必ず名前の終わりなので、そこで分割して直しています。
+<pre><code>| 13 | cooking table (p) | cleaning supplies |</code></pre>
+          </li>
+          <li>
+            <strong>8 行目のカテゴリが <code>foods</code></strong> — <code>objects.md</code> のクラス名は
+            <code>food</code> なので綴りが合いません。これは<strong>未修正</strong>です。GPSR の生成には影響しない
+            (Storing Groceries 用の情報) ため公式のままにし、<code>check_data.py</code> が WARNING として毎回知らせます。
+          </li>
+        </ol>
+
+        <h3>objects/objects.md</h3>
+<pre><code># Class drinks (drink)
+
+| Objectname               |  Image                   |
+:-------------------------:|:-------------------------:
+| coke | ![](known_objects/drinks!drink/coke.jpeg) |
+| red_bull | ![](known_objects/drinks!drink/red_bull.jpeg) |</code></pre>
+        <ul>
+          <li>見出しは <code># Class 複数形 (単数形)</code> の形式。生成文中で <code>drinks</code> / <code>a drink</code> と使い分けられます。</li>
+          <li>物体名の <code>_</code> は表示時に半角スペースになります (<code>red_bull</code> → <code>red bull</code>)。<strong>物体名にスペースを直接書かないでください。</strong></li>
+          <li><code>Image</code> 列は任意です (ジェネレータは無視します)。</li>
+        </ul>
+
+        <h3>書き換えたら必ず検証する</h3>
+<pre><code>./.venv/bin/python tools/check_data.py data</code></pre>
+<pre><code>ok names                  table rows:  10   parsed:  10
+ok rooms                  table rows:   4   parsed:   4
+ok locations              table rows:  20   parsed:  20
+ok object categories      table rows:   8   parsed:   8
+   objects: 30   placement locations: 14   storage categories: 8
+
+PROBLEMS: none
+
+WARNINGS (generation still works)
+  - the 'Object Category' column names ['foods'], ...</code></pre>
+        <p>
+          <code>PROBLEMS</code> は生成が壊れるもの、<code>WARNINGS</code> は知っておいた方がよいが
+          生成は動くものです。表の書式を崩すとこうなります。
+        </p>
+<pre><code>!! locations              table rows:  20   parsed:  11
+
+PROBLEMS
+  - locations: 20 row(s) in the markdown table but 11 parsed
+      a location name may only contain letters, spaces and the '(p)' marker,
+      and every row must end with '|'
+      try: python3 tools/fix_data_format.py data</code></pre>
+        <p>
+          <code>ok</code> は「表に書いた行数」と「実際に読み込めた数」が一致しているという意味です。
+          <strong><code>!!</code> が出たら必ず直してから本番に臨んでください。</strong>
+          黙って項目が消えたまま競技が始まるのが一番危険です。
+        </p>
+        <p>仕上げに、5000 個生成してクラッシュしないかも確認しておくと安心です。</p>
+<pre><code>./run_cli.sh -g &gt; /dev/null &amp;&amp; echo OK</code></pre>
+      </section>
+
+      <!-- 06 -->
+      <section id="llm">
+        <div class="sec-head"><span class="sec-num">06</span><h2>LLM による言い換え (任意)</h2></div>
+
+        <p>
+          <strong>コマンド生成自体は LLM 無しで動きます。</strong>
+          LLM が要るのは <code>Rephrase</code> / <code>Rephrase ALL</code> だけです。
+          接続先はジェネレータに内蔵されておらず、<strong>PC ごとに自分で指定します</strong>。
+          指定しないと <code>https://api.openai.com</code> に鍵無しで接続しにいき、押した瞬間に
+          <code>LLM ERROR</code> になります。
+        </p>
+
+        <h3>その PC で使える LLM を探す</h3>
+<pre><code>./.venv/bin/python tools/check_llm.py</code></pre>
+        <p>
+          引数なしで実行すると、そのPCのローカルポート (Ollama 11434 / vLLM 8000 / LM Studio 1234 など) を
+          順に叩き、見つかったサーバで<strong>実際に言い換えを 1 回実行</strong>します。
+          成功すればそのまま <code>llm.conf</code> に貼れる行が出ます。
+        </p>
+<pre><code>found Ollama on port 11434: gpsr-planner:latest, qwen3:8b, qwen2.5:7b-instruct
+
+testing http://localhost:11434/v1/chat/completions  -a &lt;set&gt;  -m gpsr-planner:latest
+  OK (4.0s for one command, 3 phrasings)
+  in : Tell me what is the heaviest dish on the shelf
+  out 0: What is the heaviest dish currently located on the shelf?
+  out 1: Can you tell me which dish on the shelf is the heaviest?
+  out 2: Which dish on the shelf weighs the most?
+
+add this line to llm.conf:
+  LLM_ARGS="--host localhost --port 11434 -a local -m gpsr-planner:latest"</code></pre>
+        <p>
+          失敗した場合も、原因と直し方 (モデル名が要る / thinking 非対応 / 鍵が違う / 誰も待ち受けていない)
+          を具体的に出します。特定のサーバを直接試すこともできます。
+        </p>
+<pre><code>./.venv/bin/python tools/check_llm.py --host 192.168.0.5 --port 11434 -a local -m qwen3:8b
+./.venv/bin/python tools/check_llm.py -u https://api.openai.com/v1/chat/completions -a sk-... -m gpt-5</code></pre>
+
+        <h3>llm.conf に書いておく</h3>
+        <p>LLM 設定は PC ごとに違うので、リポジトリではなく <code>llm.conf</code> に置きます。</p>
+<pre><code>cp llm.conf.example llm.conf
+<span class="c"># check_llm.py が出した LLM_ARGS の行に書き換える</span>
+
+<span class="c"># llm.conf</span>
+LLM_ARGS="--host localhost --port 11434 -a local -m qwen3:8b"</code></pre>
+        <p>以降は今までどおり起動するだけで自動的に読み込まれます。</p>
+<pre><code>./run_gpsr_ui.sh
+<span class="c"># → llm.conf: --host localhost --port 11434 -a local -m qwen3:8b</span></code></pre>
+        <p>
+          コマンドラインで LLM オプションを渡した場合はそちらが優先されます。
+          <code>llm.conf</code> は API キーを含みうるので <code>.gitignore</code> に入れてあります。
+        </p>
+
+        <h3>LLM が無い PC ではどうするか</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>状況</th><th>やること</th></tr></thead>
+            <tbody>
+              <tr><td>その PC に入れてよい</td><td><code>curl -fsSL https://ollama.com/install.sh | sh</code> → <code>ollama pull qwen3:8b</code> → <code>check_llm.py</code></td></tr>
+              <tr><td>チームの別 PC に LLM がある</td><td>その PC で LLM を LAN に公開し、<code>--host &lt;その PC の IP&gt; --port 11434</code> を指定。Ollama は既定で <code>127.0.0.1</code> のみなので <code>OLLAMA_HOST=0.0.0.0</code> が必要</td></tr>
+              <tr><td>会場でネットが使える</td><td>OpenAI の鍵を使う: <code>LLM_ARGS="-a sk-xxxxxxxx -m gpt-5"</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <span class="note-label">用意できなくても競技はできます</span>
+          <p>Rephrase が使えないだけで、GPSR コマンドの生成・表示・ログ記録はすべて動きます。</p>
+        </div>
+
+        <h3>サーバ別の注意点</h3>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>サーバ</th><th>注意</th></tr></thead>
+            <tbody>
+              <tr><td class="k">Ollama</td><td><code>-m</code> が<strong>必須</strong> (無いと <code>model is required</code>)。さらに <strong>thinking 対応モデル</strong>が必要で、<code>qwen2.5:7b-instruct</code> は <code>does not support thinking</code> で失敗します。<code>qwen3:8b</code> と <code>gpsr-planner:latest</code> は動作確認済み</td></tr>
+              <tr><td class="k">vLLM</td><td>起動時にモデルが 1 つに決まるので <code>-m</code> は不要。付けないと「思考なし」指定でリクエストされます</td></tr>
+              <tr><td class="k">OpenAI</td><td><code>--url</code>/<code>--host</code> を省くと自動的に <code>api.openai.com</code> + <code>gpt-5</code> になります</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>-a</code> (API キー) はローカルサーバでは中身を見られませんが、<strong>省略はできません</strong>。</p>
+
+        <h3>速度</h3>
+        <p>
+          言い換えは 1 コマンドにつき 3 通り。qwen3:8b で 1 コマンド 10〜20 秒、gpsr-planner で 4 秒ほどでした。
+          <strong>Rephrase ALL は 3 コマンド分まとめて走る</strong>ので、本番では必要なものだけ個別に
+          Rephrase する方が安全です。LLM が Markdown の箇条書き以外を返すと上流のパーサが例外を投げ、
+          GUI に <code>LLM ERROR</code> と出ます。
+        </p>
+      </section>
+
+      <!-- 07 -->
+      <section id="trouble">
+        <div class="sec-head"><span class="sec-num">07</span><h2>困ったとき</h2></div>
+
+        <div class="scroll">
+          <table>
+            <thead><tr><th>症状</th><th>原因と対処</th></tr></thead>
+            <tbody>
+              <tr><td class="k">Address already in use</td><td>8080 番が使用中。<code>--ui-port 9000</code> で変更するか、前回のプロセスを終了 (<code>pkill -f gpsr_ui</code>)</td></tr>
+              <tr><td class="k">SyntaxError</td><td>Python 3.12 未満で動かしている。<code>.venv</code> を使わず <code>python3</code> で直接実行していないか確認</td></tr>
+              <tr><td class="k">ModuleNotFoundError<br>(ROS を source した端末)</td><td>ROS の <code>PYTHONPATH</code> (Python 3.10) が仮想環境に混ざるため。<code>run_*.sh</code> は内部で <code>unset PYTHONPATH</code> しているので、<strong>必ずスクリプト経由で起動</strong>してください</td></tr>
+              <tr><td class="k">家具や部屋が妙に少ない</td><td>データのフォーマット不備。<code>tools/check_data.py</code> で検証</td></tr>
+              <tr><td class="k">is not a valid path</td><td>データフォルダのパスが違う。<code>-d</code> に正しいパスを渡す (既定は <code>./data</code>)</td></tr>
+              <tr><td class="k">LLM ERROR</td><td>ほとんどの場合 <strong>LLM を指定せずに起動している</strong> (OpenAI に鍵無しで接続 → 401)。<code>./.venv/bin/python tools/check_llm.py</code> で使える接続先を探し、<code>llm.conf</code> に書いてください</td></tr>
+              <tr><td class="k">フォルダを移動した</td><td><code>.venv</code> には<strong>絶対パスが埋め込まれています</strong>。移動先で <code>./setup.sh --recreate</code> を実行してください (<code>data/</code> と <code>llm.conf</code> はそのまま引き継がれます)</td></tr>
+              <tr><td class="k">上流コマンドが即落ちる</td><td><code>athome-generator-gpsr-ui</code> は既定データパスが開発者の環境のままなので <code>-d</code> が必須。<code>run_gpsr_ui.sh</code> なら自動で付きます</td></tr>
+              <tr><td class="k">別 PC からブラウザで開けない</td><td>サーバは <code>0.0.0.0</code> で待ち受けています。ファイアウォールで 8080 番を許可してください</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>まとめて動作確認するには次を実行します。データ検証と、GUI のボタン操作 (生成 → Lock &amp; Show) の自動テストが走ります。<code>3 passed</code> と出れば正常です。</p>
+<pre><code>./run_tests.sh</code></pre>
+      </section>
+
+      <!-- 08 -->
+      <section id="files">
+        <div class="sec-head"><span class="sec-num">08</span><h2>ファイル構成</h2></div>
+
+        <div class="tree">.<br>
+├── README_ja.md            <span class="dim">この説明書 (テキスト版)</span><br>
+├── setup.sh                <span class="dim">セットアップ。別 PC ではこれを実行</span><br>
+├── run_gpsr_ui.sh          <span class="dim">GUI 起動</span><br>
+├── run_cli.sh              <span class="dim">CLI 起動</span><br>
+├── run_tests.sh            <span class="dim">動作確認</span><br>
+├── requirements.lock.txt   <span class="dim">動作確認済みの依存バージョン</span><br>
+├── llm.conf.example        <span class="dim">LLM 設定のひな形</span><br>
+├── <span class="hi">llm.conf</span>                <span class="dim">★ この PC の LLM 設定 (git 管理外)</span><br>
+├── tools/<br>
+│&nbsp;&nbsp; ├── gpsr_ui.py          <span class="dim">GUI ランチャ (ポート指定・自動リロード無効化)</span><br>
+│&nbsp;&nbsp; ├── check_data.py       <span class="dim">アリーナデータの検証</span><br>
+│&nbsp;&nbsp; ├── check_llm.py        <span class="dim">LLM 接続先の探索と疎通テスト</span><br>
+│&nbsp;&nbsp; └── fix_data_format.py  <span class="dim">location_names.md の行末 | を補う</span><br>
+├── tests/                  <span class="dim">GUI の自動テスト</span><br>
+├── <span class="hi">data/</span>                   <span class="dim">★ 実際に使うアリーナデータ (Incheon2026 の修正済みコピー)</span><br>
+├── CommandGenerator/       <span class="dim">上流リポジトリ (触らない)</span><br>
+├── Incheon2026/            <span class="dim">2026 世界大会の公式データ (触らない・data/ の元)</span><br>
+└── .venv/                  <span class="dim">Python 3.12 仮想環境 (別 PC には持っていかない)</span></div>
+
+        <div class="note">
+          <span class="note-label">上流には手を入れていません</span>
+          <p>
+            <code>tools/gpsr_ui.py</code> は上流のコードを一切書き換えず、起動時の設定だけを差し替えるラッパです
+            (上流は <code>ui.run(show=False)</code> 決め打ちでポート 8080 固定・自動リロード有効のため)。
+            上流を更新してもこの仕組みはそのまま使えます。
+          </p>
+        </div>
+
+        <h3>更新する</h3>
+<pre><code>./setup.sh --latest
+./run_tests.sh</code></pre>
+        <p>
+          上流の変更で GUI が壊れた場合は、<code>setup.sh</code> の <code>GEN_COMMIT</code> に書かれている
+          動作確認済みコミットに戻せます (引数なしの <code>./setup.sh</code> がそれです)。
+        </p>
+      </section>
+
+      <footer>
+        上流: <a href="https://github.com/RoboCupAtHome/CommandGenerator">RoboCupAtHome/CommandGenerator</a> ·
+        アリーナデータ: <a href="https://github.com/RoboCupAtHome/Incheon2026">RoboCupAtHome/Incheon2026</a>
+      </footer>
+
+    </main>
+  </div>
+</div>

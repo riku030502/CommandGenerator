@@ -1,0 +1,15 @@
+# Built by setup.sh, machine specific (absolute paths inside).
+.venv/
+
+# Upstream checkouts, cloned by setup.sh at the revisions pinned there.
+# --competition=NAME adds its directory to .git/info/exclude automatically.
+/CommandGenerator/
+/Incheon2026/
+
+# Holds the LLM API key.
+llm.conf
+
+__pycache__/
+*.py[cod]
+*.bak
+.pytest_cache/

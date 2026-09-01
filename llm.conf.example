@@ -1,0 +1,17 @@
+# LLM settings for the 'Rephrase' button, per machine.
+# Copy to llm.conf and edit.  Command generation does not need any of this.
+#
+# Find the right values for this PC with:
+#   ./.venv/bin/python tools/check_llm.py
+#
+# Ollama on this PC (the model must support "thinking", e.g. qwen3:8b):
+LLM_ARGS="--host localhost --port 11434 -a local -m qwen3:8b"
+#
+# A team server on the LAN:
+# LLM_ARGS="--host 192.168.0.5 --port 11434 -a local -m qwen3:8b"
+#
+# vLLM (serves a single model, so no -m):
+# LLM_ARGS="--host 192.168.0.5 --port 8000 -a KEY"
+#
+# OpenAI:
+# LLM_ARGS="-a sk-xxxxxxxx -m gpt-5"
